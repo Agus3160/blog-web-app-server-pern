@@ -11,8 +11,9 @@ const authAccessToken = async (req: Request, res: Response, next: NextFunction) 
     getAccessTokenPayLoad(accessToken)
 
     next()
-
   }catch(error){
     next(error)
   }
 }
+
+export default authAccessToken

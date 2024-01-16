@@ -5,9 +5,9 @@ import { ServerError } from "../middelwares/errorHandler";
 import { saltAndHashPassword, comparePassword } from "../libs/bcryptLib";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad } from "../services/tokenServices";
 
-const signUpController = async (req: Request<RegisterCredentials>, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
+const signUpController = async (req: Request, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
   try{
-    const { username, email, password } = req.body
+    const { username, email, password }:RegisterCredentials = req.body
 
     if(!username || !email || !password) throw new ServerError(400, 'Bad Request', 'username, email and password are required')
     if(password.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long')
@@ -26,9 +26,9 @@ const signUpController = async (req: Request<RegisterCredentials>, res: Response
   }
 }
 
-const loginController = async (req: Request<LoginCredentials>, res: Response<ApiResponseScheme<Session>>, next:NextFunction) => {
+const loginController = async (req: Request, res: Response<ApiResponseScheme<Session>>, next:NextFunction) => {
   try{
-    const { username, password } = req.body
+    const { username, password }:LoginCredentials = req.body
 
     if(!username || !password) throw new ServerError(400, 'Bad Request', 'username and password are required', "Invalid Credentials")
 
@@ -45,7 +45,7 @@ const loginController = async (req: Request<LoginCredentials>, res: Response<Api
     const accessToken = generateAccessToken(sessionPayload)
     const refreshToken = generateRefreshToken(sessionPayload)
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 60 * 1000 })
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: parseInt(process.env.JWT_REFRESH_TOKEN_TTL!) * 1000 })
     res.status(200).json({
       success: true,
       message: 'user logged in successfully',
@@ -69,8 +69,6 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
     const payload = getRefreshTokenPayLoad(refreshToken)
     const newAccessToken = generateAccessToken(payload.session)
 
-    console.log(payload)
-
     res.status(200).json({
       success: true,
       message: 'token refreshed successfully',
@@ -86,4 +84,17 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
   }
 }
 
-export { signUpController, loginController, refreshAccessTokenController }
+const logOutController = async (req: Request, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
+  try{
+    res.clearCookie('refreshToken')
+    res.status(200).json({
+      success: true,
+      message: 'user logged out successfully'
+    })
+  }catch(error){
+    next(error)
+  }
+}
+
+
+export { signUpController, loginController, refreshAccessTokenController, logOutController }

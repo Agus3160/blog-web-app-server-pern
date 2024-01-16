@@ -34,8 +34,8 @@ const getAccessTokenPayLoad = (accessToken: string) => {
     const payload = jwt.verify(accessToken, JWT_ACCESS_TOKEN) as CustomPayLoad
     return payload
   }catch(error){
-    if(error instanceof JsonWebTokenError) throw new ServerError(500, error.name, error.message, undefined, "Invalid Credentials")
     if(error instanceof TokenExpiredError) throw new ServerError(403, error.name, error.message, undefined, "Access Token has expired")
+    if(error instanceof JsonWebTokenError) throw new ServerError(500, error.name, error.message, undefined, "Invalid Credentials")
     throw error
   }
 }

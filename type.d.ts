@@ -30,3 +30,18 @@ export type Session = {
 }
 
 export type SessionPayload = Omit<Session, 'accessToken'>
+
+export type PostRes = {
+  id: string,
+  title: string,
+  content: string,
+  createdAt: Date,
+  updatedAt: Date,
+  author: string
+}
+
+export type PostReq = {
+  title: string,
+  content: string
+  authorId: string
+}
