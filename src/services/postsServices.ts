@@ -53,3 +53,52 @@ export const getPostsByAuthorUsername = async (username: string) => {
     throw error
   }
 }
+
+export const getPostById = async (id: string) => {
+  try{
+    return await prisma.post.findUnique({
+      where: {
+        id: id
+      },
+      include: {
+        author: true,
+      }
+    })
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting post")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting post")
+    throw error
+  }
+}
+
+export const deletePost = async (id: string) => {
+  try{
+    return await prisma.post.delete({
+      where: {
+        id: id
+      }
+    })
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error deleting post")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error deleting post")
+    throw error
+  }
+}
+
+export const updatePost = async (id: string, title: string, content: string) => {
+  try{
+    return await prisma.post.update({
+      where: {
+        id: id
+      },
+      data: {
+        title,
+        content
+      }
+    })
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error updating post")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error updating post")
+    throw error
+  }
+}

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponseScheme, PostReq, PostRes } from "../../type";
 import { ServerError } from "../middelwares/errorHandler";
-import { createPost, getPosts, getPostsByAuthorUsername } from "../services/postsServices";
+import { createPost, deletePost, getPostById, getPosts, getPostsByAuthorUsername, updatePost } from "../services/postsServices";
 
 const getAllPostsController = async (_req: Request, res: Response<ApiResponseScheme<PostRes[]|[]>>, next:NextFunction) => {
   try{
@@ -83,5 +83,60 @@ const getPostsByAuthorUsernameController = async (req: Request, res: Response<Ap
   }
 }
 
+const getPostByIdController = async (req: Request, res: Response<ApiResponseScheme<PostRes>>, next:NextFunction) => {
+  try{
+    const { id } = req.params
+    const postData = await getPostById(id)
+    if(!postData) throw new ServerError(404, 'Not Found', 'Post not found', undefined, 'Post not found')
+    res.status(200).json({
+      success: true,
+      message: 'Post retrieved successfully',
+      data: {
+        id: postData.id,
+        title: postData.title,
+        content: postData.content,
+        createdAt: postData.createdAt,
+        updatedAt: postData.updatedAt,
+        author: postData.author.username
+      }
+    })
+  }catch(error){
+    next(error)
+  }
+}
 
-export { getAllPostsController, uploadPostController, getPostsByAuthorUsernameController }
+const deletePostController = async (req: Request, res: Response<ApiResponseScheme<null>>, next:NextFunction) => {
+  try{
+    const { id } = req.params
+
+    const postData = await deletePost(id)
+
+    if(!postData) throw new ServerError(404, 'Not Found', 'Post not found', undefined, 'Post not found')
+
+    res.status(200).json({
+      success: true,
+      message: 'Post deleted successfully',
+      data: null
+    })
+  }catch(error){
+    next(error)
+  }
+}
+
+const updatePostController = async (req: Request, res: Response<ApiResponseScheme<PostRes>>, next:NextFunction) => {
+  try{
+    const { title, content, authorId }:PostReq = req.body
+
+    await updatePost(title, content, authorId)
+    
+    res.status(200).json({
+      success: true,
+      message: 'Post updated successfully',
+    })
+  }catch(error){
+    next(error)
+  }
+}
+
+
+export { getAllPostsController, uploadPostController, getPostsByAuthorUsernameController, getPostByIdController, deletePostController, updatePostController }
