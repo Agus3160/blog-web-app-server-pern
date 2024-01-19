@@ -25,8 +25,13 @@ const generateRefreshToken = (session: SessionPayload) => {
 }
 
 const getRefreshTokenPayLoad = (refreshToken: string) => {
-  const payload = jwt.verify(refreshToken, JWT_REFRESH_TOKEN) as CustomPayLoad
-  return payload
+  try{
+    const payload = jwt.verify(refreshToken, JWT_REFRESH_TOKEN) as CustomPayLoad
+    return payload
+  }catch(error){
+    if(error instanceof JsonWebTokenError) throw new ServerError(401, error.name, error.message, undefined, "Invalid Credentials")
+    throw error
+  }
 }
 
 const getAccessTokenPayLoad = (accessToken: string) => {

@@ -2,6 +2,7 @@ import express from 'express'
 import { errorHandler } from './middelwares/errorHandler'
 import auth from './routes/auth'
 import post from './routes/post'
+import user from './routes/user'
 import dotenv from 'dotenv';
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
@@ -16,6 +17,7 @@ server.use(cookieParser())
 
 server.use('/auth', auth)
 server.use('/posts', post)
+server.use('/user', user)
 
 server.use(errorHandler)
 

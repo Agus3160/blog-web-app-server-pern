@@ -45,3 +45,8 @@ export type PostReq = {
   content: string
   authorId: string
 }
+
+export type UserData = {
+  username: string
+  email: string
+}

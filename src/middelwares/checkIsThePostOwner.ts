@@ -11,11 +11,11 @@ const checkIsThePostOwner = async (req: Request, _res: Response, next: NextFunct
 
     const decoded = getAccessTokenPayLoad(accessToken as string)
 
-    const { userId } = decoded
+    const { session } = decoded
     
     const postData = await getPostById(id)
 
-    if(postData?.authorId !== userId) throw new ServerError(403, 'Forbidden', 'You are not the owner of this post', undefined, 'You are not the owner of this post')
+    if(postData?.author.email !== session.userId) throw new ServerError(403, 'Forbidden', 'You are not the owner of this post', undefined, 'You are not the owner of this post')
 
     next()
 

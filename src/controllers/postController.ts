@@ -125,9 +125,10 @@ const deletePostController = async (req: Request, res: Response<ApiResponseSchem
 
 const updatePostController = async (req: Request, res: Response<ApiResponseScheme<PostRes>>, next:NextFunction) => {
   try{
-    const { title, content, authorId }:PostReq = req.body
+    const { id: authorId } = req.params
+    const { title, content }:PostReq = req.body
 
-    await updatePost(title, content, authorId)
+    await updatePost(authorId, title, content)
     
     res.status(200).json({
       success: true,
