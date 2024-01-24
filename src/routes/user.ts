@@ -1,5 +1,5 @@
 import express from 'express'
-import authAccessToken from '../middelwares/authAccessToken';
+import authAccessToken from '../middleware/authAccessToken';
 import { 
   getUserByIdController,
   deleteUserController

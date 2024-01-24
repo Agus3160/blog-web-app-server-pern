@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponseScheme, PostReq, PostRes } from "../../type";
-import { ServerError } from "../middelwares/errorHandler";
+import { ServerError } from "../middleware/errorHandler";
 import { createPost, deletePost, getPostById, getPosts, getPostsByAuthorUsername, updatePost } from "../services/postsServices";
 
 const getAllPostsController = async (_req: Request, res: Response<ApiResponseScheme<PostRes[]|[]>>, next:NextFunction) => {

@@ -1,6 +1,6 @@
 import jwt,{JsonWebTokenError, JwtPayload, TokenExpiredError} from 'jsonwebtoken';
 import { SessionPayload } from '../../type';
-import { ServerError } from '../middelwares/errorHandler';
+import { ServerError } from '../middleware/errorHandler';
 
 interface CustomPayLoad extends JwtPayload {
   session: SessionPayload

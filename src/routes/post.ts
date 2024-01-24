@@ -1,5 +1,5 @@
 import express from 'express'
-import authAccessToken from '../middelwares/authAccessToken';
+import authAccessToken from '../middleware/authAccessToken';
 import { 
   getAllPostsController, 
   uploadPostController, getPostsByAuthorUsernameController, 
@@ -7,7 +7,7 @@ import {
   getPostByIdController, 
   deletePostController 
 } from '../controllers/postController';
-import checkIsThePostOwner from '../middelwares/checkIsThePostOwner';
+import checkIsThePostOwner from '../middleware/checkIsThePostOwner';
 
 const route = express.Router();
 

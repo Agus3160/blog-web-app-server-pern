@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponseScheme, UserData } from "../../type";
-import { ServerError } from "../middelwares/errorHandler";
+import { ServerError } from "../middleware/errorHandler";
 import { getUserByUsername, deleteUserById } from "../services/usersServices";
 import { getRefreshTokenPayLoad } from "../services/tokenServices";
 

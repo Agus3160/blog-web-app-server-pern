@@ -1,5 +1,5 @@
 import express from 'express'
-import { errorHandler } from './middelwares/errorHandler'
+import { errorHandler } from './middleware/errorHandler'
 import auth from './routes/auth'
 import post from './routes/post'
 import user from './routes/user'

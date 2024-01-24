@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
-import { ServerError } from "../middelwares/errorHandler";
+import { ServerError } from "../middleware/errorHandler";
 
 const prisma = new PrismaClient();
 

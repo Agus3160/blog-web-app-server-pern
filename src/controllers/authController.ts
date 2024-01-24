@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponseScheme, LoginCredentials, RegisterCredentials, Session } from "../../type";
 import { createUser, getUserByUsername } from "../services/authServices";
-import { ServerError } from "../middelwares/errorHandler";
+import { ServerError } from "../middleware/errorHandler";
 import { saltAndHashPassword, comparePassword } from "../libs/bcryptLib";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad } from "../services/tokenServices";
 

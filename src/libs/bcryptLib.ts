@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { ServerError } from '../middelwares/errorHandler'
+import { ServerError } from '../middleware/errorHandler'
 
 const saltAndHashPassword = async (password: string) => {
   try{
