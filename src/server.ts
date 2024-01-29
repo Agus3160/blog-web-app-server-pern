@@ -10,7 +10,7 @@ dotenv.config()
 
 const server = express()
 
-server.use(cors({origin: 'http://localhost:5173', credentials: true}))
+server.use(cors({origin: 'https://web-app-blog-pern.onrender.com', credentials: true}))
 server.use(express.json())
 server.use(express.urlencoded({ extended: true }))
 server.use(cookieParser())
@@ -21,4 +21,4 @@ server.use('/user', user)
 
 server.use(errorHandler)
 
-server.listen(3000, () => console.log('server running on port 3000'))
+server.listen(3000, () => console.log('Server running on port 3000'))
