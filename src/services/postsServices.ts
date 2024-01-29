@@ -18,13 +18,15 @@ export const getPosts = async () => {
   }
 }
 
-export const createPost = async (title: string, content: string, authorId: string) => {
+export const createPost = async (title: string, content: string, authorId: string, imageUrl: string, imagePath: string) => {
   try{
     return await prisma.post.create({
       data: {
         title,
         content,
-        authorId
+        authorId,
+        imageUrl: imageUrl,
+        imagePath: imagePath
       },
       include: {
         author: true
@@ -85,7 +87,7 @@ export const deletePost = async (id: string) => {
   }
 }
 
-export const updatePost = async (id: string, title: string, content: string) => {
+export const updatePost = async (id: string, title: string, content: string, imagePath: string, imageUrl: string) => {
   try{
     return await prisma.post.update({
       where: {
@@ -93,12 +95,50 @@ export const updatePost = async (id: string, title: string, content: string) => 
       },
       data: {
         title,
-        content
+        content,
+        imagePath,
+        imageUrl
       }
     })
   }catch(error){
     if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error updating post")
     if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error updating post")
+    throw error
+  }
+}
+
+export const getPostImagePath = async (id: string) => {
+  try{
+    return await prisma.post.findUnique({
+      where: {
+        id: id
+      },
+      select: {
+        imagePath: true
+      }
+    })
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting post image path")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting post image path")
+    throw error
+  }
+}
+
+export const getAllPostImagePaths = async (userId:string) => {
+  try{
+    const pathsObject = await prisma.post.findMany({
+      where: {
+        authorId: userId
+      },
+      select: {
+        imagePath: true
+      }
+    })
+    const paths = pathsObject.map(path => path.imagePath)
+    return paths
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting User Info")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting User Info")
     throw error
   }
 }

@@ -4,13 +4,15 @@ import { ServerError } from "../middleware/errorHandler";
 
 const prisma = new PrismaClient();
 
-export const createUser = async (username: string, email: string, password: string) => {
+export const createUser = async (username: string, email: string, password: string, imageUrl:string, imagePath:string) => {
   try{
     return await prisma.user.create({
       data: {
         email: email,
         username: username,
-        password: password
+        password: password,
+        imageUrl: imageUrl,
+        imagePath: imagePath
       }
     })
   }catch(error){

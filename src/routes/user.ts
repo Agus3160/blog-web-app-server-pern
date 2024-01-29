@@ -2,13 +2,19 @@ import express from 'express'
 import authAccessToken from '../middleware/authAccessToken';
 import { 
   getUserByIdController,
-  deleteUserController
+  deleteUserController,
+  updateUserInfoController,
+  changePasswordController
 } from '../controllers/userController';
 
 const route = express.Router();
 
-//Get endpoints
+//GET endpoints
 route.get('/:username', authAccessToken, getUserByIdController)
+
+//PUT endpoints
+route.put('/', authAccessToken, updateUserInfoController)
+route.put('/password', authAccessToken, changePasswordController)
 
 //DELETE endpoints
 route.delete('/', authAccessToken, deleteUserController)

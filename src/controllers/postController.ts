@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { ApiResponseScheme, PostReq, PostRes } from "../../type";
+import { ApiResponseScheme, PostPutReq, PostReq, PostRes } from "../../type";
 import { ServerError } from "../middleware/errorHandler";
-import { createPost, deletePost, getPostById, getPosts, getPostsByAuthorUsername, updatePost } from "../services/postsServices";
+import { createPost, deletePost, getPostById, getPosts, getPostsByAuthorUsername, updatePost, getPostImagePath } from "../services/postsServices";
+import { deleteImage, uploadImage } from "../services/firebaseServices";
 
 const getAllPostsController = async (_req: Request, res: Response<ApiResponseScheme<PostRes[]|[]>>, next:NextFunction) => {
   try{
@@ -11,6 +12,7 @@ const getAllPostsController = async (_req: Request, res: Response<ApiResponseSch
         id: post.id,
         title: post.title,
         content: post.content,
+        imageUrl: post.imageUrl,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
         author: post.author.username
@@ -31,16 +33,19 @@ const getAllPostsController = async (_req: Request, res: Response<ApiResponseSch
 const uploadPostController = async (req: Request, res: Response<ApiResponseScheme<PostRes>>, next:NextFunction) => {
   try{
 
-    const { title, content, authorId }:PostReq = req.body
+    const { title, content, authorId, image }:PostReq = req.body
 
-    if(!title || !content || !authorId) throw new ServerError(400, 'Bad Request', "title, content and authorId are required", undefined,'title, content and authorId are required')
+    if(!title || !content || !authorId || !image) throw new ServerError(400, 'Bad Request', "title, content and authorId are required", undefined,'title, content and authorId are required')
 
-    const post = await createPost(title, content, authorId)
+    const [imageUrl, path] = await uploadImage(image, 'post-images')
+
+    const post = await createPost(title, content, authorId, imageUrl, path)
 
     const postData = {
       id: post.id,
       title: post.title,
       content: post.content,
+      imageUrl: post.imageUrl,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       author: post.author.username
@@ -66,6 +71,7 @@ const getPostsByAuthorUsernameController = async (req: Request, res: Response<Ap
         id: post.id,
         title: post.title,
         content: post.content,
+        imageUrl: post.imageUrl,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
         author: post.author.username
@@ -95,6 +101,7 @@ const getPostByIdController = async (req: Request, res: Response<ApiResponseSche
         id: postData.id,
         title: postData.title,
         content: postData.content,
+        imageUrl: postData.imageUrl,
         createdAt: postData.createdAt,
         updatedAt: postData.updatedAt,
         author: postData.author.username
@@ -110,8 +117,9 @@ const deletePostController = async (req: Request, res: Response<ApiResponseSchem
     const { id } = req.params
 
     const postData = await deletePost(id)
-
     if(!postData) throw new ServerError(404, 'Not Found', 'Post not found', undefined, 'Post not found')
+
+    await deleteImage(postData.imagePath)
 
     res.status(200).json({
       success: true,
@@ -125,10 +133,35 @@ const deletePostController = async (req: Request, res: Response<ApiResponseSchem
 
 const updatePostController = async (req: Request, res: Response<ApiResponseScheme<PostRes>>, next:NextFunction) => {
   try{
-    const { id: authorId } = req.params
-    const { title, content }:PostReq = req.body
+    const { id: postId } = req.params
+    const { title, content, oldImageUrl, newImage }:PostPutReq = req.body
 
-    await updatePost(authorId, title, content)
+    if(!postId || !title || !content) throw new ServerError(400, 'Bad Request', "title, content and postId are required", undefined,'title, content and postId are required')
+
+    let updatedData:{title:string, content:string, imageUrl:string, path:string}
+
+    const postImageDirectory = await getPostImagePath(postId)
+    if(!postImageDirectory) throw new ServerError(404, 'Not Found', 'Post not found', undefined, 'Post not found')
+
+    if(newImage.length > 0){
+      await deleteImage(postImageDirectory.imagePath)
+      const [imageUrl, path] = await uploadImage(newImage, 'post-images')
+      updatedData = {
+        title: title,
+        content: content,
+        imageUrl: imageUrl,
+        path: path
+      }
+    }else{
+      updatedData = {
+        title: title,
+        content: content,
+        imageUrl: oldImageUrl,
+        path: postImageDirectory.imagePath
+      }
+    }
+
+    await updatePost(postId, updatedData.title, updatedData.content, updatedData.path, updatedData.imageUrl)
     
     res.status(200).json({
       success: true,

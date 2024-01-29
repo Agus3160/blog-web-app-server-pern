@@ -4,17 +4,20 @@ import { createUser, getUserByUsername } from "../services/authServices";
 import { ServerError } from "../middleware/errorHandler";
 import { saltAndHashPassword, comparePassword } from "../libs/bcryptLib";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad } from "../services/tokenServices";
+import { uploadImage } from "../services/firebaseServices";
 
 const signUpController = async (req: Request, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
   try{
-    const { username, email, password }:RegisterCredentials = req.body
+    const { username, email, password, image }:RegisterCredentials = req.body
 
-    if(!username || !email || !password) throw new ServerError(400, 'Bad Request', 'username, email and password are required')
+    if(!username || !email || !password || !image) throw new ServerError(400, 'Bad Request', 'username, email and password are required')
     if(password.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long')
+
+    const [imageUrl, path] = await uploadImage(image, 'profile-images')
 
     const cryptedPassword = await saltAndHashPassword(password)
 
-    await createUser(username, email, cryptedPassword)
+    await createUser(username, email, cryptedPassword, imageUrl, path)
 
     res.status(200).json({
       success: true,
@@ -30,17 +33,17 @@ const loginController = async (req: Request, res: Response<ApiResponseScheme<Ses
   try{
     const { username, password }:LoginCredentials = req.body
 
-    if(!username || !password) throw new ServerError(400, 'Bad Request', 'username and password are required', "Invalid Credentials")
+    if(!username || !password) throw new ServerError(400, 'Bad Request', 'Username and Password are required', "Invalid Credentials")
 
     const user = await getUserByUsername(username)
 
-    if(!user) throw new ServerError(400, 'Bad Request', 'user not found', undefined, "Invalid Credentials")
+    if(!user) throw new ServerError(400, 'Bad Request', 'User not found', undefined, "Invalid Credentials")
 
     const isPasswordValid = await comparePassword(password, user.password)
 
-    if(!isPasswordValid) throw new ServerError(400, 'Bad Request', 'invalid credentials', undefined, "Invalid Credentials")
+    if(!isPasswordValid) throw new ServerError(400, 'Bad Request', 'Incorrect Password', undefined, "Invalid Credentials")
 
-    const sessionPayload = {userId:user.id, username:user.username}
+    const sessionPayload = {userId:user.id, username:user.username, profileImage:user.imageUrl}
 
     const accessToken = generateAccessToken(sessionPayload)
     const refreshToken = generateRefreshToken(sessionPayload)
@@ -48,8 +51,9 @@ const loginController = async (req: Request, res: Response<ApiResponseScheme<Ses
     res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: parseInt(process.env.JWT_REFRESH_TOKEN_TTL!) * 1000 })
     res.status(200).json({
       success: true,
-      message: 'user logged in successfully',
+      message: 'User logged in successfully',
       data: {
+        profileImage: user.imageUrl,
         username: user.username,
         userId: user.id,
         accessToken: accessToken
@@ -64,7 +68,7 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
   try{
     const refreshToken:string|null = req.cookies["refreshToken"]
 
-    if(!refreshToken) throw new ServerError(401, 'Unauthorized', 'refresh token is required', undefined, "Unauthorized")
+    if(!refreshToken) throw new ServerError(401, 'Unauthorized', 'Refresh token is required', undefined, "Unauthorized")
 
     const payload = getRefreshTokenPayLoad(refreshToken)
     const newAccessToken = generateAccessToken(payload.session)
@@ -75,7 +79,8 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
       data: {
         username: payload.session.username,
         userId: payload.session.userId,
-        accessToken: newAccessToken
+        accessToken: newAccessToken,
+        profileImage: payload.session.profileImage
       }
     })
 
@@ -89,7 +94,7 @@ const logOutController = async (req: Request, res: Response<ApiResponseScheme<un
     res.clearCookie('refreshToken')
     res.status(200).json({
       success: true,
-      message: 'user logged out successfully'
+      message: 'User logged out successfully'
     })
   }catch(error){
     next(error)
