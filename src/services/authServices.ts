@@ -19,7 +19,7 @@ export const createUser = async (username: string, email: string, password: stri
     if(error instanceof PrismaClientKnownRequestError) {
       switch(error.code){
         case "P2002":
-          throw new ServerError(400, error.name, error.message, error.code, "Invalid Credentials")
+          throw new ServerError(400, error.name, error.message, error.code, "User and/or Email already exists")
         default:
           throw new ServerError(500, error.name, error.message, error.code, "Error creating user")
       }
