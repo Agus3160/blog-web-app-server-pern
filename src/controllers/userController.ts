@@ -17,7 +17,8 @@ const getUserByIdController = async (req: Request, res: Response<ApiResponseSche
 
     const userData = {
       username: user.username,
-      email: user.email
+      email: user.email,
+      imageUrl: user.imageUrl
     }
 
     res.status(200).json({
