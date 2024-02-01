@@ -10,8 +10,8 @@ const signUpController = async (req: Request, res: Response<ApiResponseScheme<un
   try{
     const { username, email, password, image }:RegisterCredentials = req.body
 
-    if(!username || !email || !password || !image) throw new ServerError(400, 'Bad Request', 'username, email and password are required')
-    if(password.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long')
+    if(!username || !email || !password || !image) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Username, email and password are necesary")
+    if(password.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long', undefined, "The min length of the password is 8 chars")
 
     const [imageUrl, path] = await uploadImage(image, 'profile-images')
 
