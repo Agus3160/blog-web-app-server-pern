@@ -48,7 +48,7 @@ const loginController = async (req: Request, res: Response<ApiResponseScheme<Ses
     const accessToken = generateAccessToken(sessionPayload)
     const refreshToken = generateRefreshToken(sessionPayload)
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: parseInt(process.env.JWT_REFRESH_TOKEN_TTL!) * 1000 })
+    res.cookie('refreshToken', refreshToken, { secure: true, sameSite: 'none', httpOnly: true, maxAge: parseInt(process.env.JWT_REFRESH_TOKEN_TTL!) * 1000 })
     res.status(200).json({
       success: true,
       message: 'User logged in successfully',

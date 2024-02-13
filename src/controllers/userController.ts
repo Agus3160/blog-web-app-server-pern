@@ -112,7 +112,7 @@ const updateUserInfoController = async (req: Request, res: Response<ApiResponseS
     const newRefreshToken = generateRefreshToken(newPayload)
     const newAccessToken = generateAccessToken(newPayload)
 
-    res.status(200).cookie("refreshToken", newRefreshToken, { httpOnly: true, maxAge: parseInt(process.env.JWT_REFRESH_TOKEN_TTL!) * 1000 }).
+    res.status(200).cookie("refreshToken", newRefreshToken, { secure: true, sameSite: 'none',  httpOnly: true, maxAge: parseInt(process.env.JWT_REFRESH_TOKEN_TTL!) * 1000 }).
     json({
       success: true,
       message: 'User data updated successfully',
