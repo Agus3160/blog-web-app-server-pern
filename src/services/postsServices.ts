@@ -18,7 +18,7 @@ export const getPosts = async () => {
   }
 }
 
-export const createPost = async (title: string, content: string, authorId: string, imageUrl: string, imagePath: string) => {
+export const createPost = async (title: string, content: string, authorId: string, imageUrl: string|null, imagePath: string|null) => {
   try{
     return await prisma.post.create({
       data: {
@@ -87,7 +87,7 @@ export const deletePost = async (id: string) => {
   }
 }
 
-export const updatePost = async (id: string, title: string, content: string, imagePath: string, imageUrl: string) => {
+export const updatePost = async (id: string, title: string, content: string, imagePath: string|null, imageUrl: string|null) => {
   try{
     return await prisma.post.update({
       where: {

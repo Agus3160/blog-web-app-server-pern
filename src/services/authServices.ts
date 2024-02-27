@@ -4,7 +4,7 @@ import { ServerError } from "../middleware/errorHandler";
 
 const prisma = new PrismaClient();
 
-export const createUser = async (username: string, email: string, password: string, imageUrl:string, imagePath:string) => {
+export const createUser = async (username: string, email: string, password: string, imageUrl:string|null, imagePath:string|null) => {
   try{
     return await prisma.user.create({
       data: {
@@ -45,3 +45,19 @@ export const getUserByUsername = async (username: string) => {
   }
 }
 
+export const resetPassword = async (userId: string, password: string) => {
+  try{
+    return await prisma.user.update({
+      where: {
+        id: userId
+      },
+      data: {
+        password: password
+      }
+    })
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error resetting password")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined, "Error resetting password")
+    throw error
+  }
+}

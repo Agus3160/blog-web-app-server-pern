@@ -1,19 +1,27 @@
 import { NextFunction, Request, Response } from "express";
-import { ApiResponseScheme, LoginCredentials, RegisterCredentials, Session } from "../../type";
+import { ApiResponseScheme, LoginCredentials, NewAccessToken, RegisterCredentials, Session } from "../../type";
 import { createUser, getUserByUsername } from "../services/authServices";
 import { ServerError } from "../middleware/errorHandler";
 import { saltAndHashPassword, comparePassword } from "../libs/bcryptLib";
-import { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad } from "../services/tokenServices";
+import { generateAccessToken, generateRefreshToken, generateResetToken, getRefreshTokenPayLoad, getResetTokenPayLoad } from "../services/tokenServices";
 import { uploadImage } from "../services/firebaseServices";
+import { getUserByEmail, getUserImageUrlById, updateUserPassword } from "../services/usersServices";
+import { sendEmail } from "../services/mailService";
+import { allowedOrigins } from "../libs/allowedOrigins";
 
-const signUpController = async (req: Request, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
+const signUpController = async (req: Request, res: Response<ApiResponseScheme>, next:NextFunction) => {
   try{
     const { username, email, password, image }:RegisterCredentials = req.body
 
-    if(!username || !email || !password || !image) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Username, email and password are necesary")
+    if(!username || !email || !password) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Username, email and password are necesary")
     if(password.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long', undefined, "The min length of the password is 8 chars")
 
-    const [imageUrl, path] = await uploadImage(image, 'profile-images')
+    let imageUrl = null
+    let path = null
+
+    if(image){
+      [imageUrl, path] = await uploadImage(image, 'profile-images')
+    }
 
     const cryptedPassword = await saltAndHashPassword(password)
 
@@ -21,7 +29,7 @@ const signUpController = async (req: Request, res: Response<ApiResponseScheme<un
 
     res.status(200).json({
       success: true,
-      message: 'user created successfully',
+      message: 'User created successfully',
     })
 
   }catch(error){
@@ -72,15 +80,18 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
 
     const payload = getRefreshTokenPayLoad(refreshToken)
     const newAccessToken = generateAccessToken(payload.session)
+    const currentImage = await getUserImageUrlById(payload.session.userId)
+
+    if(currentImage === undefined) throw new ServerError(500, 'Internal Server Error', 'Error getting user image', undefined, "Error getting user image")
 
     res.status(200).json({
       success: true,
-      message: 'token refreshed successfully',
-      data: {
+      message: 'Token refreshed successfully',
+      data: {      
         username: payload.session.username,
         userId: payload.session.userId,
+        profileImage: currentImage,
         accessToken: newAccessToken,
-        profileImage: payload.session.profileImage
       }
     })
 
@@ -89,7 +100,7 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
   }
 }
 
-const logOutController = async (req: Request, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
+const logOutController = async (_req: Request, res: Response<ApiResponseScheme<undefined>>, next:NextFunction) => {
   try{
     res.clearCookie('refreshToken')
     res.status(200).json({
@@ -101,5 +112,61 @@ const logOutController = async (req: Request, res: Response<ApiResponseScheme<un
   }
 }
 
+const resetPasswordSendEmailController = async (req: Request, res: Response<ApiResponseScheme>, next:NextFunction) => {
+  try{
 
-export { signUpController, loginController, refreshAccessTokenController, logOutController }
+    const { email }: {email: string|null} = req.body
+
+    if(!email) throw new ServerError(400, 'Bad Request', 'Email is required', undefined, "Email is required")
+
+    const user = await getUserByEmail(email)
+
+    if(!user) throw new ServerError(400, 'Bad Request', 'User not found', undefined, "User not found")
+
+    const resetToken = generateResetToken(user.id)
+
+    const resetLink = `${allowedOrigins[0]}/reset-password/${resetToken}`
+
+    const emailContent = `Hi ${user.username},\n\n You requested a password reset. Click the link below to reset your password:\n\n ${resetLink}`
+
+    sendEmail(email, 'Password Reset', emailContent)
+    
+    res.status(200).json({
+      success: true,
+      message: 'Password reset email sent successfully',
+    })
+
+    console.log('This user has requested a password reset: \n', user)
+
+  }catch(error){
+    next(error)
+  }
+}
+
+const resetPasswordController = async (req: Request, res: Response<ApiResponseScheme>, next:NextFunction) => {
+  try{
+    const { password } = req.body
+
+    const token = req.params.token
+
+    const payload = getResetTokenPayLoad(token)
+
+    const hashedPassword = await saltAndHashPassword(password)
+
+    const user = await updateUserPassword(payload.userId, hashedPassword)
+
+    if(!user) throw new ServerError(404, 'Bad Request', 'User not found', undefined, "User not found")
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully',
+    })
+
+    console.log('This user has changed its password: \n', user)
+
+  }catch(error){
+    next(error)
+  }
+}
+
+export { signUpController, loginController, refreshAccessTokenController, logOutController, resetPasswordSendEmailController, resetPasswordController }

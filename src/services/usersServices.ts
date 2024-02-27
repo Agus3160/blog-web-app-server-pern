@@ -33,7 +33,7 @@ export const deleteUserById = async (userId:string) => {
 }
 
 
-export const updateUserInfoById = async (userId:string, username:string, email:string, imageUrl:string, imagePath:string) => {
+export const updateUserInfoById = async (userId:string, username:string, email:string, imageUrl:string|null, imagePath:string|null) => {
   try{
     return await prisma.user.update({
       where: {
@@ -99,6 +99,37 @@ export const getUserPassword = async (userId:string) => {
       }
     })
     return user?.password
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting User Info")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting User Info")
+    throw error
+  }
+}
+
+export const getUserImageUrlById = async (userId:string) => {
+  try{
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId
+      }, select: {
+        imageUrl: true
+      }
+    })
+    return user?.imageUrl
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting User Info")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting User Info")
+    throw error
+  }
+}
+
+export const getUserByEmail = async (email:string) => {
+  try{
+    return await prisma.user.findFirst({
+      where: {
+        email: email
+      }
+    })
   }catch(error){
     if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting User Info")
     if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting User Info")

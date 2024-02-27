@@ -6,11 +6,17 @@ interface CustomPayLoad extends JwtPayload {
   session: SessionPayload
 }
 
+interface ResetPassPayload extends JwtPayload {
+  userId: string
+}
+
 const JWT_ACCESS_TOKEN = process.env.JWT_ACCESS_TOKEN!
 const JWT_ACCESS_TOKEN_TTL = parseInt(process.env.JWT_ACCESS_TOKEN_TTL!)
 
 const JWT_REFRESH_TOKEN = process.env.JWT_REFRESH_TOKEN!
 const JWT_REFRESH_TOKEN_TTL = parseInt(process.env.JWT_REFRESH_TOKEN_TTL!)
+
+const JWT_RESET_PASSWORD_TTL = parseInt(process.env.JWT_RESET_PASSWORD_TTL!)
 
 const generateAccessToken = (session: SessionPayload) => {
   return jwt.sign({ session }, JWT_ACCESS_TOKEN, {
@@ -45,4 +51,24 @@ const getAccessTokenPayLoad = (accessToken: string) => {
   }
 }
 
-export { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad, getAccessTokenPayLoad }
+const generateResetToken = (userId: string) => {
+  try{
+    return jwt.sign({ userId }, JWT_ACCESS_TOKEN, {
+      expiresIn: JWT_RESET_PASSWORD_TTL,
+    })
+  }catch(error){
+    throw error
+  }
+}
+
+const getResetTokenPayLoad = (resetToken: string) => {
+  try{
+    const payload = jwt.verify(resetToken, JWT_ACCESS_TOKEN) as ResetPassPayload
+    return payload
+  }catch(error){
+    if(error instanceof JsonWebTokenError) throw new ServerError(401, error.name, error.message, undefined, "This link has expired")
+    throw error
+  }
+}
+
+export { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad, getAccessTokenPayLoad, getResetTokenPayLoad, generateResetToken }

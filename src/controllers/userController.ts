@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponseScheme, Session, UserData, UserPutReq } from "../../type";
 import { ServerError } from "../middleware/errorHandler";
-import { getUserByUsername, deleteUserById, updateUserInfoById, getUserImagePath, getUserPassword, updateUserPassword } from "../services/usersServices";
+import { getUserByUsername, deleteUserById, updateUserInfoById, getUserImagePath, getUserPassword, updateUserPassword, getUserImageUrlById } from "../services/usersServices";
 import { getAllPostImagePaths } from "../services/postsServices";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad } from "../services/tokenServices";
 import { deleteImage, uploadImage } from "../services/firebaseServices";
@@ -48,7 +48,7 @@ const deleteUserController = async (req: Request, res: Response<ApiResponseSchem
 
     if(allPostsImagePathFormUser.length > 0){
       for(const imagePath of allPostsImagePathFormUser){
-        await deleteImage(imagePath)
+        if(imagePath) await deleteImage(imagePath)
       }
     }
 
@@ -68,15 +68,13 @@ const deleteUserController = async (req: Request, res: Response<ApiResponseSchem
 const updateUserInfoController = async (req: Request, res: Response<ApiResponseScheme<Session>>, next: NextFunction) => {
   try{    
     const {username, email, currentPassword, newImage}:UserPutReq = req.body
-    
-    console.log(username, email, currentPassword, newImage)
 
     if(!username || !email || !currentPassword) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Bad Request")
     if(currentPassword.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long', undefined, "Bad Request")
     
     const refreshToken = req.cookies["refreshToken"]
     const payload = getRefreshTokenPayLoad(refreshToken)
-    const currentImageUrl = payload.session.profileImage
+
     const userId = payload.session.userId
 
     const passwordDB = await getUserPassword(userId)
@@ -86,13 +84,16 @@ const updateUserInfoController = async (req: Request, res: Response<ApiResponseS
     if(!passwordMatch) throw new ServerError(400, 'Bad Request', 'Password is incorrect', undefined, "Bad Request")
 
     const currentPath = await getUserImagePath(userId)
-    if(!currentPath) throw new ServerError(500, 'Internal Server Error', 'Error getting user image path', undefined, "Internal Server Error") 
+    if(currentPath === undefined) throw new ServerError(401, 'Unauthorized', 'User not found', undefined, "Unauthorized")
 
-    let newImageUrl = ''
-    let newPath = ''
+    const currentImageUrl = await getUserImageUrlById(userId)
+    if(currentImageUrl === undefined) throw new ServerError(401, 'Unauthorized', 'User not found', undefined, "Unauthorized")
 
-    if(newImage.length !== 0){
-      await deleteImage(currentPath)
+    let newImageUrl:string|null = null
+    let newPath:string|null = null
+
+    if(newImage && newImage !== undefined){
+      if(currentPath) await deleteImage(currentPath)
       let [imageUrl, path] = await uploadImage(newImage, 'profile-images')
       newImageUrl = imageUrl
       newPath = path 

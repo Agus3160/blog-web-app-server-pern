@@ -6,11 +6,14 @@ import user from './routes/user'
 import dotenv from 'dotenv';
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+
 dotenv.config()
+
+import { allowedOrigins } from './libs/allowedOrigins'
 
 const server = express()
 
-server.use(cors({origin: 'https://web-app-blog-pern.onrender.com', credentials: true}))
+server.use(cors({origin: allowedOrigins, credentials: true}))
 server.use(express.json())
 server.use(express.urlencoded({ extended: true }))
 server.use(cookieParser())

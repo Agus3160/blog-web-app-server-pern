@@ -35,9 +35,12 @@ const uploadPostController = async (req: Request, res: Response<ApiResponseSchem
 
     const { title, content, authorId, image }:PostReq = req.body
 
-    if(!title || !content || !authorId || !image) throw new ServerError(400, 'Bad Request', "title, content and authorId are required", undefined,'title, content and authorId are required')
+    if(!title || !content || !authorId) throw new ServerError(400, 'Bad Request', "title, content and authorId are required", undefined,'title, content and authorId are required')
 
-    const [imageUrl, path] = await uploadImage(image, 'post-images')
+    let imageUrl: string|null = null
+    let path: string|null = null
+
+    if(image) [imageUrl, path] = await uploadImage(image, 'post-images')
 
     const post = await createPost(title, content, authorId, imageUrl, path)
 
@@ -119,7 +122,7 @@ const deletePostController = async (req: Request, res: Response<ApiResponseSchem
     const postData = await deletePost(id)
     if(!postData) throw new ServerError(404, 'Not Found', 'Post not found', undefined, 'Post not found')
 
-    await deleteImage(postData.imagePath)
+    if(postData.imagePath) await deleteImage(postData.imagePath)
 
     res.status(200).json({
       success: true,
@@ -138,13 +141,13 @@ const updatePostController = async (req: Request, res: Response<ApiResponseSchem
 
     if(!postId || !title || !content) throw new ServerError(400, 'Bad Request', "title, content and postId are required", undefined,'title, content and postId are required')
 
-    let updatedData:{title:string, content:string, imageUrl:string, path:string}
+    let updatedData:{title:string, content:string, imageUrl:string|null, path:string|null}
 
     const postImageDirectory = await getPostImagePath(postId)
     if(!postImageDirectory) throw new ServerError(404, 'Not Found', 'Post not found', undefined, 'Post not found')
 
-    if(newImage.length > 0){
-      await deleteImage(postImageDirectory.imagePath)
+    if(newImage){
+      if (postImageDirectory.imagePath) await deleteImage(postImageDirectory.imagePath)
       const [imageUrl, path] = await uploadImage(newImage, 'post-images')
       updatedData = {
         title: title,
