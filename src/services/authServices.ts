@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
 import { ServerError } from "../middleware/errorHandler";
 
 const prisma = new PrismaClient();
 
-export const createUser = async (username: string, email: string, password: string, imageUrl:string|null, imagePath:string|null) => {
+export const createUser = async (username: string, email: string, password: string, imageUrl:string|null, imagePath:string|null, role:Role) => {
   try{
     return await prisma.user.create({
       data: {
@@ -12,7 +12,8 @@ export const createUser = async (username: string, email: string, password: stri
         username: username,
         password: password,
         imageUrl: imageUrl,
-        imagePath: imagePath
+        imagePath: imagePath,
+        role: role
       }
     })
   }catch(error){

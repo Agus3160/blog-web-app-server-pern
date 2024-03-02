@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
 import { ServerError } from "../middleware/errorHandler";
+import { Role as Roles } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -33,7 +34,7 @@ export const deleteUserById = async (userId:string) => {
 }
 
 
-export const updateUserInfoById = async (userId:string, username:string, email:string, imageUrl:string|null, imagePath:string|null) => {
+export const updateUserInfoById = async (userId:string, username:string, email:string, imageUrl:string|null, imagePath:string|null, role:Roles) => {
   try{
     return await prisma.user.update({
       where: {
@@ -43,7 +44,8 @@ export const updateUserInfoById = async (userId:string, username:string, email:s
         username: username,
         email: email,
         imageUrl: imageUrl,
-        imagePath: imagePath
+        imagePath: imagePath,
+        role: role
       }
     })
   }catch(error){
@@ -128,6 +130,23 @@ export const getUserByEmail = async (email:string) => {
     return await prisma.user.findFirst({
       where: {
         email: email
+      }
+    })
+  }catch(error){
+    if(error instanceof PrismaClientKnownRequestError) throw new ServerError(500, error.name, error.message, error.code, "Error getting User Info")
+    if (error instanceof PrismaClientUnknownRequestError) throw new ServerError(500, error.name, error.message, undefined,"Error getting User Info")
+    throw error
+  }
+}
+
+export const getAllUsers = async () => {
+  try{
+    return await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        imageUrl: true,
+        role: true
       }
     })
   }catch(error){

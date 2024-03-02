@@ -1,3 +1,4 @@
+import { Role as Roles } from "@prisma/client"
 export type ApiResponseScheme<T=undefined> = {
   success: boolean
   message?: string
@@ -22,6 +23,7 @@ export type RegisterCredentials = {
   email: string
   password: string
   image:string
+  role: string
 }
 
 export type Session = {
@@ -29,6 +31,14 @@ export type Session = {
   userId: string
   profileImage: string|null
   accessToken: string
+  role:Roles 
+}
+
+export type Users = {
+  username: string;
+  role: $Enums.Role;
+  id: string;
+  imageUrl: string|null;
 }
 
 export type NewAccessToken = {
@@ -38,6 +48,7 @@ export type NewAccessToken = {
 export type SessionPayload = {
   userId: string
   username: string
+  role: Roles
 }
 
 export type PostRes = {
@@ -75,4 +86,5 @@ export type UserPutReq = {
   email:string
   currentPassword:string
   newImage:string|null
+  role:Roles
 }

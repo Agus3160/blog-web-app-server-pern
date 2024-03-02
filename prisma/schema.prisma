@@ -10,7 +10,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
- model Post {
+enum Role{
+  USER
+  ADMIN
+}
+
+model Post {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -29,5 +34,6 @@ model User {
   password  String
   imageUrl  String?
   imagePath String?
+  role      Role     @default(USER)
   posts     Post[]
 }

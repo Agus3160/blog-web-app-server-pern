@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { ApiResponseScheme, Session, UserData, UserPutReq } from "../../type";
+import { ApiResponseScheme, Session, UserData, UserPutReq, Users } from "../../type";
 import { ServerError } from "../middleware/errorHandler";
-import { getUserByUsername, deleteUserById, updateUserInfoById, getUserImagePath, getUserPassword, updateUserPassword, getUserImageUrlById } from "../services/usersServices";
+import { getUserByUsername, deleteUserById, updateUserInfoById, getUserImagePath, getUserPassword, updateUserPassword, getUserImageUrlById, getAllUsers } from "../services/usersServices";
 import { getAllPostImagePaths } from "../services/postsServices";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenPayLoad } from "../services/tokenServices";
 import { deleteImage, uploadImage } from "../services/firebaseServices";
@@ -33,16 +33,16 @@ const getUserByIdController = async (req: Request, res: Response<ApiResponseSche
 
 const deleteUserController = async (req: Request, res: Response<ApiResponseScheme<undefined>>, next: NextFunction) => {
   try {
-    const refreshToken = req.cookies["refreshToken"]
-
-    if (!refreshToken) throw new ServerError(401, 'Unauthorized', 'refresh token is required', undefined, "Unauthorized")
-
-    const payload = getRefreshTokenPayLoad(refreshToken)
-    const userId = payload.session.userId
-
-    if (!userId) throw new ServerError(401, 'Unauthorized', 'user id is required', undefined, "Unauthorized")
+    const {id:userId} = req.params
 
     const allPostsImagePathFormUser = await getAllPostImagePaths(userId)
+
+    const currentImageUrl = await getUserImageUrlById(userId)
+    const currentImagePath = await getUserImagePath(userId)
+
+    if(currentImageUrl && currentImagePath){
+      await deleteImage(currentImagePath)
+    }
 
     console.log('allPostsImagePathFormUser', allPostsImagePathFormUser)
 
@@ -67,7 +67,7 @@ const deleteUserController = async (req: Request, res: Response<ApiResponseSchem
 
 const updateUserInfoController = async (req: Request, res: Response<ApiResponseScheme<Session>>, next: NextFunction) => {
   try{    
-    const {username, email, currentPassword, newImage}:UserPutReq = req.body
+    const {username, email, currentPassword, newImage, role }:UserPutReq = req.body
 
     if(!username || !email || !currentPassword) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Bad Request")
     if(currentPassword.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long', undefined, "Bad Request")
@@ -102,10 +102,10 @@ const updateUserInfoController = async (req: Request, res: Response<ApiResponseS
       newPath = currentPath
     }
   
-    await updateUserInfoById(userId, username, email, newImageUrl, newPath)
+    await updateUserInfoById(userId, username, email, newImageUrl, newPath, role)
 
     const newPayload = {
-      profileImage: newImageUrl,
+      role: payload.Role,
       username: username,
       userId: userId
     }
@@ -121,7 +121,8 @@ const updateUserInfoController = async (req: Request, res: Response<ApiResponseS
         profileImage: newImageUrl,
         username: username,
         userId: userId,
-        accessToken: newAccessToken
+        accessToken: newAccessToken,
+        role: payload.Role
       }
     })
 
@@ -159,4 +160,20 @@ const changePasswordController = async (req: Request, res: Response<ApiResponseS
   }
 }
 
-export { getUserByIdController, deleteUserController, updateUserInfoController, changePasswordController }
+const getAllUsersController = async (req: Request, res: Response<ApiResponseScheme<Users[]>>, next: NextFunction) => {
+  try{
+    
+    const users = await getAllUsers()
+
+    res.status(200).json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: users
+    })
+
+  }catch(err){
+    next(err)
+  }
+}
+
+export { getUserByIdController, deleteUserController, updateUserInfoController, changePasswordController, getAllUsersController }

@@ -2,10 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { getPostById } from "../services/postsServices";
 import { ServerError } from "./errorHandler";
 import { getAccessTokenPayLoad } from "../services/tokenServices";
+import { getUserByUsername } from "../services/authServices";
 
-const checkIsThePostOwner = async (req: Request, _res: Response, next: NextFunction) => {
+const checkIsTheUserOwner = async (req: Request, _res: Response, next: NextFunction) => {
   try{
-    const { id } = req.params
     
     const accessToken = req.headers.authorization?.split(' ')[1]
 
@@ -13,11 +13,11 @@ const checkIsThePostOwner = async (req: Request, _res: Response, next: NextFunct
 
     const { session } = decoded
     
-    const postData = await getPostById(id)
+    const userData = await getUserByUsername(session.username)
 
     if(session.role === 'ADMIN') return next()
 
-    if(postData?.authorId !== session.userId) throw new ServerError(403, 'Forbidden', 'You are not the owner of this post', undefined, 'You are not the owner of this post')
+    if(userData?.id !== session.userId) throw new ServerError(403, 'Forbidden', 'You are not the owner of this User', undefined, 'You are not the owner of this User')
 
     next()
 
@@ -26,4 +26,4 @@ const checkIsThePostOwner = async (req: Request, _res: Response, next: NextFunct
   }
 }
 
-export default checkIsThePostOwner
+export default checkIsTheUserOwner

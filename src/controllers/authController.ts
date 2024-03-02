@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { ApiResponseScheme, LoginCredentials, NewAccessToken, RegisterCredentials, Session } from "../../type";
+import { ApiResponseScheme, LoginCredentials, RegisterCredentials, Session } from "../../type";
 import { createUser, getUserByUsername } from "../services/authServices";
 import { ServerError } from "../middleware/errorHandler";
 import { saltAndHashPassword, comparePassword } from "../libs/bcryptLib";
@@ -8,12 +8,16 @@ import { uploadImage } from "../services/firebaseServices";
 import { getUserByEmail, getUserImageUrlById, updateUserPassword } from "../services/usersServices";
 import { sendEmail } from "../services/mailService";
 import { allowedOrigins } from "../libs/allowedOrigins";
+import { Role } from "@prisma/client";
 
 const signUpController = async (req: Request, res: Response<ApiResponseScheme>, next:NextFunction) => {
   try{
-    const { username, email, password, image }:RegisterCredentials = req.body
+    const { username, email, password, image, role }:RegisterCredentials = req.body
 
-    if(!username || !email || !password) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Username, email and password are necesary")
+    console.log(username, email, password, role)
+
+    if(!username || !email || !password || !role ) throw new ServerError(400, 'Bad Request', 'username, email and password are required', undefined, "Username, email and password are necesary")
+
     if(password.length < 8) throw new ServerError(400, 'Bad Request', 'password must be at least 8 characters long', undefined, "The min length of the password is 8 chars")
 
     let imageUrl = null
@@ -25,7 +29,7 @@ const signUpController = async (req: Request, res: Response<ApiResponseScheme>, 
 
     const cryptedPassword = await saltAndHashPassword(password)
 
-    await createUser(username, email, cryptedPassword, imageUrl, path)
+    await createUser(username, email, cryptedPassword, imageUrl, path, role as Role)
 
     res.status(200).json({
       success: true,
@@ -51,7 +55,7 @@ const loginController = async (req: Request, res: Response<ApiResponseScheme<Ses
 
     if(!isPasswordValid) throw new ServerError(400, 'Bad Request', 'Incorrect Password', undefined, "Invalid Credentials")
 
-    const sessionPayload = {userId:user.id, username:user.username, profileImage:user.imageUrl}
+    const sessionPayload = {userId:user.id, username:user.username, role: user.role}
 
     const accessToken = generateAccessToken(sessionPayload)
     const refreshToken = generateRefreshToken(sessionPayload)
@@ -64,7 +68,8 @@ const loginController = async (req: Request, res: Response<ApiResponseScheme<Ses
         profileImage: user.imageUrl,
         username: user.username,
         userId: user.id,
-        accessToken: accessToken
+        accessToken: accessToken,
+        role: user.role
       }
     })
   }catch(error){
@@ -92,6 +97,7 @@ const refreshAccessTokenController = async (req: Request, res: Response<ApiRespo
         userId: payload.session.userId,
         profileImage: currentImage,
         accessToken: newAccessToken,
+        role: payload.session.role
       }
     })
 
