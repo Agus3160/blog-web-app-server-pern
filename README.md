@@ -41,32 +41,9 @@ To set up the server Blog locally, follow the step-by-step guide below.
     npx prisma init
   ```
 
-  Models:
-  ```prisma
-    model Post {
-    id        String   @id @default(uuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    title     String   @db.VarChar(255)
-    imageUrl  String  
-    imagePath String 
-    content   String
-    author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-    authorId  String
-  }
+5. Set up all the env variables that the project needs as FIREBASE config, db location setup and JWT config.
 
-  model User {
-    id        String   @id @default(uuid())
-    email     String   @unique
-    username  String   @unique
-    password  String
-    imageUrl  String
-    imagePath String
-    posts     Post[]
-  }
-  ```
-
-5. Set up all the env variables that the project needs as FIREBASE config and JWT config.
+5. Migrate the models from prisma to your db.
 
 6. Run the next code to start the server
   ```bash
